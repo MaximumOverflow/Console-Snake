@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-using System.Xml.Schema;
-
-namespace Snakes;
+﻿namespace Snakes;
 
 internal class Snake
 {
@@ -19,8 +11,8 @@ internal class Snake
     internal Pellet Pellet { get; set; }
     internal Position UpperLeftBound { get; set; }
     internal Position LowerRightBound { get; set; }
-    internal List<Position> BodyParts { get; set; } = new List<Position>();
-    internal List<Position> Obstacles { get; set; } = new List<Position>();
+    internal List<Position> BodyParts { get; set; } = new();
+    internal List<Position> Obstacles { get; set; } = new();
     internal Direction Direction
     {
         get
