@@ -2,8 +2,8 @@
 
 internal class Snake
 {
-    private object syncLock = new object();
-    private Direction direction;
+    private volatile Direction _direction;
+    internal Direction Direction => _direction;
 
     internal Position Position { get; set; }
     internal int Speed { get; set; } = 1;
@@ -13,28 +13,10 @@ internal class Snake
     internal Position LowerRightBound { get; set; }
     internal List<Position> BodyParts { get; set; } = new();
     internal List<Position> Obstacles { get; set; } = new();
-    internal Direction Direction
-    {
-        get
-        {
-            lock (syncLock)
-            {
-                return direction;
-            }
-        }
-
-        set
-        {
-            lock (syncLock)
-            {
-                direction = value;
-            }
-        }
-    }
     
     internal Snake(Direction direction, int speed, int length, Position upperLeftBound, Position lowerRightBound)
     {
-        Direction = direction;
+        _direction = direction;
         Speed = speed;
         Length = length;
         UpperLeftBound = upperLeftBound;
@@ -49,25 +31,18 @@ internal class Snake
     {
         BodyParts.Add(Position);
 
-        switch (Direction)
+        Position = Direction switch
         {
-            case Direction.Up:
-                Position = new Position(Position.X, Position.Y - 1);
-                break;
-            case Direction.Down:
-                Position = new Position(Position.X, Position.Y + 1);
-                break;
-            case Direction.Left:
-                Position = new Position(Position.X - 1, Position.Y);
-                break;
-            case Direction.Right:
-                Position = new Position(Position.X + 1, Position.Y);
-                break;
-        }
+            Direction.Up => Position with { Y = Position.Y - 1 },
+            Direction.Down => Position with { Y = Position.Y + 1 },
+            Direction.Left => Position with { X = Position.X - 1 },
+            Direction.Right => Position with { X = Position.X + 1 },
+            _ => Position,
+        };
 
-        while (BodyParts.Count > Length)
+        if(BodyParts.Count > Length)
         {
-            BodyParts.RemoveAt(0);
+            BodyParts.RemoveRange(0, BodyParts.Count - Length);
         }
 
         if (Position.X < UpperLeftBound.X
@@ -77,27 +52,14 @@ internal class Snake
         {
             return false;
         }
+        
+        if(BodyParts.Any(Position, (in Position a, in Position b) => a == b))
+            return false;
+        
+        if(Obstacles.Any(Position, (in Position a, in Position b) => a == b))
+            return false;
 
-        foreach (var part in BodyParts)
-        {
-            if (part.X == Position.X
-                && part.Y == Position.Y)
-            {
-                return false;
-            }
-        }
-
-        foreach (var obstacle in Obstacles)
-        {
-            if (Position.X == obstacle.X
-                && Position.Y == obstacle.Y)
-            {
-                return false;
-            }
-        }
-
-        if (Position.X == Pellet.Position.X
-            && Position.Y == Pellet.Position.Y)
+        if (Position == Pellet.Position)
         {
             Pellet.Respawn(UpperLeftBound, LowerRightBound, Obstacles, BodyParts);
             Length++;
@@ -117,16 +79,16 @@ internal class Snake
                 switch (key.KeyChar)
                 {
                     case 'w':
-                        Direction = Direction == Direction.Down ? Direction : Direction.Up;
+                        _direction = Direction == Direction.Down ? Direction : Direction.Up;
                         break;
                     case 'a':
-                        Direction = Direction == Direction.Right ? Direction : Direction.Left;
+                        _direction = Direction == Direction.Right ? Direction : Direction.Left;
                         break;
                     case 's':
-                        Direction = Direction == Direction.Up ? Direction : Direction.Down;
+                        _direction = Direction == Direction.Up ? Direction : Direction.Down;
                         break;
                     case 'd':
-                        Direction = Direction == Direction.Left ? Direction : Direction.Right;
+                        _direction = Direction == Direction.Left ? Direction : Direction.Right;
                         break;
                 }
             }
