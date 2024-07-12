@@ -1,36 +1,48 @@
 ﻿namespace Snakes;
 
-internal class Buffer
+internal readonly struct Buffer(int width, int height)
 {
-    internal int Width { get; set; }
-    internal int Height { get; set; }
-    internal char[,] Chars { get; set; }
+    public readonly int Width = width;
+    public readonly int Height = height;
+    public readonly char[] Chars = new char[width * height];
+    
+    public ref char this[int x, int y] => ref Chars[x + y * Width];
+    public ref char this[Position pos] => ref Chars[pos.X + pos.Y * Width];
 
-    internal Buffer(int width, int height)
+    public void Clear() => Chars.AsSpan().Fill(' ');
+}
+
+internal readonly struct BufferView
+{
+    private readonly int _stride;
+    private readonly char[] _chars;
+    private readonly int _offsetX, _offsetY;
+    
+    public readonly int Width, Height;
+    
+    public ref char this[int x, int y] => ref _chars[x + _offsetX + (y + _offsetY) * _stride];
+    public ref char this[Position pos] => ref _chars[pos.X + _offsetX + (pos.Y + _offsetX) * _stride];
+
+    public BufferView(Buffer buffer, int startX, int width, int startY, int height)
     {
+        if (startX < 0 || width < 0 || startY < 0 || height < 0)
+            throw new ArgumentOutOfRangeException();
+        
+        if (startX + width > buffer.Width || startY + height > buffer.Height)
+            throw new ArgumentOutOfRangeException();
+
         Width = width;
         Height = height;
-        Chars = new char[Height, Width];
+        _offsetX = startX;
+        _offsetY = startY;
+        _chars = buffer.Chars;
+        _stride = buffer.Width;
     }
 
-    internal char GetPos(Position pos)
+    public void Clear()
     {
-        return Chars[pos.Y, pos.X];
-    }
-
-    internal void SetPos(Position pos, char ch)
-    {
-        Chars[pos.Y, pos.X] = ch;
-    }
-
-    internal void Reset()
-    {
-        for (int x = 0; x < Width; x++)
-        {
-            for (int y = 0; y < Height; y++)
-            {
-                SetPos(new Position(x, y), ' ');
-            }
-        }
+        var ey = _offsetY + Height;
+        for (var y = _offsetY; y < ey; y++)
+            _chars.AsSpan(y * _stride + _offsetX, Width).Fill(' ');
     }
 }
