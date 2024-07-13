@@ -1,19 +1,24 @@
 ﻿namespace Snakes;
 
+internal record struct BodyPart(Position Position, Direction Direction);
+
 internal class Snake
 {
     private volatile Direction _direction;
     internal Direction Direction => _direction;
 
+    private volatile bool _alive = true;
+    internal bool Alive => _alive;
+
     internal Position Position { get; set; }
-    internal int Speed { get; set; } = 1;
+    internal int Speed { get; } = 1;
     internal int Length { get; set; }
-    internal Pellet Pellet { get; set; }
-    internal Position UpperLeftBound { get; set; }
-    internal Position LowerRightBound { get; set; }
-    internal List<Position> BodyParts { get; set; } = new();
-    internal List<Position> Obstacles { get; set; } = new();
-    
+    internal Pellet Pellet { get; }
+    internal Position UpperLeftBound { get; }
+    internal Position LowerRightBound { get; }
+    internal List<Position> Obstacles { get; } = new();
+    internal List<BodyPart> BodyParts { get; } = new();
+
     internal Snake(Direction direction, int speed, int length, Position upperLeftBound, Position lowerRightBound)
     {
         _direction = direction;
@@ -27,9 +32,11 @@ internal class Snake
         BeginInputHandle();
     }
 
-    internal bool Move()
+    public void Move() => _alive = MoveInternal();
+
+    private bool MoveInternal()
     {
-        BodyParts.Add(Position);
+        BodyParts.Add(new(Position, Direction));
 
         Position = Direction switch
         {
@@ -53,7 +60,7 @@ internal class Snake
             return false;
         }
         
-        if(BodyParts.Any(Position, (in Position a, in Position b) => a == b))
+        if(BodyParts.Any(Position, (in Position a, in BodyPart b) => a == b.Position))
             return false;
         
         if(Obstacles.Any(Position, (in Position a, in Position b) => a == b))
@@ -68,29 +75,20 @@ internal class Snake
         return true;
     }
 
-    internal void BeginInputHandle()
+    private void BeginInputHandle()
     {
         new Thread(() =>
         {
-            while (true)
+            while (Alive)
             {
-                var key = Console.ReadKey(true);
-
-                switch (key.KeyChar)
+                _direction = Console.ReadKey(true).KeyChar switch
                 {
-                    case 'w':
-                        _direction = Direction == Direction.Down ? Direction : Direction.Up;
-                        break;
-                    case 'a':
-                        _direction = Direction == Direction.Right ? Direction : Direction.Left;
-                        break;
-                    case 's':
-                        _direction = Direction == Direction.Up ? Direction : Direction.Down;
-                        break;
-                    case 'd':
-                        _direction = Direction == Direction.Left ? Direction : Direction.Right;
-                        break;
-                }
+                    'w' => Direction == Direction.Down ? Direction : Direction.Up,
+                    'a' => Direction == Direction.Right ? Direction : Direction.Left,
+                    's' => Direction == Direction.Up ? Direction : Direction.Down,
+                    'd' => Direction == Direction.Left ? Direction : Direction.Right,
+                    _ => _direction
+                };
             }
         }).Start();
     }
