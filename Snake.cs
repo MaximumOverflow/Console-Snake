@@ -4,13 +4,9 @@ internal record struct BodyPart(Position Position, Direction Direction);
 
 internal class Snake
 {
-    private volatile Direction _direction;
-    internal Direction Direction => _direction;
-
-    private volatile bool _alive = true;
-    internal bool Alive => _alive;
-
     internal Position Position { get; set; }
+    internal bool Alive { get; private set; } = true;
+    internal Direction Direction { get; private set; }
     internal int Speed { get; } = 1;
     internal int Length { get; set; }
     internal Pellet Pellet { get; }
@@ -21,21 +17,21 @@ internal class Snake
 
     internal Snake(Direction direction, int speed, int length, Position upperLeftBound, Position lowerRightBound)
     {
-        _direction = direction;
         Speed = speed;
         Length = length;
+        Direction = direction;
         UpperLeftBound = upperLeftBound;
         LowerRightBound = lowerRightBound;
         //TODO: gen obstacles
         Pellet = new Pellet(UpperLeftBound, LowerRightBound, Obstacles, BodyParts);
         Position = Pellet.Position;
-        BeginInputHandle();
     }
 
-    public void Move() => _alive = MoveInternal();
+    public void Move() => Alive = MoveInternal();
 
     private bool MoveInternal()
     {
+        HandleInput();
         BodyParts.Add(new(Position, Direction));
 
         Position = Direction switch
@@ -75,21 +71,16 @@ internal class Snake
         return true;
     }
 
-    private void BeginInputHandle()
+    private void HandleInput()
     {
-        new Thread(() =>
+        if(!Console.KeyAvailable) return;
+        Direction = Console.ReadKey(true).KeyChar switch
         {
-            while (Alive)
-            {
-                _direction = Console.ReadKey(true).KeyChar switch
-                {
-                    'w' => Direction == Direction.Down ? Direction : Direction.Up,
-                    'a' => Direction == Direction.Right ? Direction : Direction.Left,
-                    's' => Direction == Direction.Up ? Direction : Direction.Down,
-                    'd' => Direction == Direction.Left ? Direction : Direction.Right,
-                    _ => _direction
-                };
-            }
-        }).Start();
+            'w' => Direction == Direction.Down ? Direction : Direction.Up,
+            'a' => Direction == Direction.Right ? Direction : Direction.Left,
+            's' => Direction == Direction.Up ? Direction : Direction.Down,
+            'd' => Direction == Direction.Left ? Direction : Direction.Right,
+            _ => Direction
+        };
     }
 }
