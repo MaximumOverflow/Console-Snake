@@ -19,6 +19,14 @@ internal class Screen
         ? "\u2551\u2554\u255a\u2557\u255d\u2550"
         : "oooooo";
 
+    private readonly char _pelletChar = Console.OutputEncoding.EncodingName == Encoding.UTF8.EncodingName
+        ? '\u0f36'
+        : '*';
+    
+    private readonly char _obstacleChar = Console.OutputEncoding.EncodingName == Encoding.UTF8.EncodingName
+        ? '\u2388'
+        : '#';
+
     internal Screen(int width, int height)
     {
         _buffer = new Buffer(width + 3, height + 2);
@@ -56,10 +64,10 @@ internal class Screen
     internal void Update(Snake snake)
     {
         _view.Clear();
-        _view[snake.Pellet.Position] = '+';
+        _view[snake.Pellet.Position] = _pelletChar;
 
         foreach (var pos in snake.Obstacles)
-            _view[pos] = '&';
+            _view[pos] = _obstacleChar;
 
         for (var i = 0; i < snake.BodyParts.Count; i++)
         {

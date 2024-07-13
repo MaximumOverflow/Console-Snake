@@ -14,7 +14,7 @@ internal class Program
             snake.Move();
             screen.Update(snake);
             screen.Render();
-            Thread.Sleep(1000 / snake.Speed);
+            Thread.Sleep((int) (1000 / snake.Speed));
         }
         
         Console.CursorVisible = true;

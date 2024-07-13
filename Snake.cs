@@ -4,10 +4,11 @@ internal record struct BodyPart(Position Position, Direction Direction);
 
 internal class Snake
 {
+    private readonly int _baseSpeed;
     internal Position Position { get; set; }
     internal bool Alive { get; private set; } = true;
     internal Direction Direction { get; private set; }
-    internal int Speed { get; } = 1;
+    internal float Speed => _baseSpeed + 0.1f * Length;
     internal int Length { get; set; }
     internal Pellet Pellet { get; }
     internal Position UpperLeftBound { get; }
@@ -15,16 +16,29 @@ internal class Snake
     internal List<Position> Obstacles { get; } = new();
     internal List<BodyPart> BodyParts { get; } = new();
 
-    internal Snake(Direction direction, int speed, int length, Position upperLeftBound, Position lowerRightBound)
+    internal Snake(Direction direction, int baseSpeed, int length, Position upperLeftBound, Position lowerRightBound)
     {
-        Speed = speed;
+        _baseSpeed = baseSpeed;
         Length = length;
         Direction = direction;
         UpperLeftBound = upperLeftBound;
         LowerRightBound = lowerRightBound;
-        //TODO: gen obstacles
         Pellet = new Pellet(UpperLeftBound, LowerRightBound, Obstacles, BodyParts);
         Position = Pellet.Position;
+
+        var area = (lowerRightBound.X - upperLeftBound.X) * (lowerRightBound.Y - upperLeftBound.Y);
+        var count = Random.Shared.Next(area / 100 * 1, area / 100 * 3);
+        for (int i = 0; i < count; i++)
+        {
+            Position obstacle;
+            do
+            {
+                var x = Random.Shared.Next(upperLeftBound.X + 1, lowerRightBound.X - 1);
+                var y = Random.Shared.Next(upperLeftBound.Y + 1, lowerRightBound.Y - 1);
+                obstacle = new(x, y);
+            } while (obstacle == Position);
+            Obstacles.Add(obstacle);
+        }
     }
 
     public void Move() => Alive = MoveInternal();
